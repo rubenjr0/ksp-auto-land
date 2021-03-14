@@ -1,47 +1,40 @@
 PRINT "= Landing".
 
-SET brakeAlt TO MAX(ALT:PERIAPSIS, BODY:RADIUS / 5).
-LOCK radar TO SHIP:BOUNDS:BOTTOMALTRADAR.
-LOCK size TO SHIP:BOUNDS:SIZE:Z.
-LOCK prog TO SHIP:VELOCITY:SURFACE.
 
-LOCK STEERING TO prog.
-PRINT "Waiting to kill horizontal speed at " + brakeAlt + "m".
-WAIT UNTIL radar <= brakeAlt.
+LOCK RAD TO BODY:RADIUS + ALT:RADAR - ALTITUDE.
+LOCK g TO BODY:MU / (RAD ^ 2).
+LOCK A TO AVAILABLETHRUST / MASS - g.
+LOCK radar TO ALT:RADAR.
+LOCK dist TO VERTICALSPEED * VERTICALSPEED / (2 * A).
+LOCK bd TO radar - dist - 5.
 
-PRINT "Braking Stage".
-BRAKES ON.
-// STAGE.
-IF GROUNDSPEED / AIRSPEED > 0.3 {
-    PRINT "Killing horizontal speed".
-    WAIT 3.
-    LOCK THROTTLE TO 1.
-    WAIT UNTIL GROUNDSPEED / AIRSPEED <= 0.3.
-    LOCK THROTTLE TO 0.
-} ELSE {
-    PRINT "No need to kill horizontal speed".
+SET NAVMODE TO "SURFACE".
+SAS ON.
+WAIT 0.1.
+SET SASMODE TO "PROGRADE".
+
+UNTIL bd <= 0 {
+    CLEARSCREEN.
+    PRINT bd.
 }
 
-PRINT "Preparing burn".
-LOCK STEERING TO "KILL".
-LOCK STEERING TO prog.
+SET Mi TO MASS.
+LOCK THROTTLE TO MASS / Mi.
 
-PRINT "Awaiting burn".
-WAIT UNTIL (radar - 2 * size) <= (AIRSPEED ^ 2 / (2 * (AVAILABLETHRUST / MASS - BODY:MU / BODY:RADIUS ^ 2))).
-LOCK THROTTLE TO (MASS/ AVAILABLETHRUST) * ((BODY:MU / BODY:RADIUS ^ 2) + AIRSPEED ^ 2 / (2 * radar)).
-PRINT "FIRING ENGINES".
+UNTIL radar <= 50 {
+    CLEARSCREEN.
+    PRINT "Alt to deploy shell: " + (radar - 50).
+}.
 
-PRINT "Waiting to deploy shell".
-WAIT UNTIL radar <= 50.
-LOCK STEERING TO "KILL".
 STAGE.
 GEAR ON.
 LIGHTS ON.
+AG10 ON.
 BRAKES OFF.
+SET SASMODE TO "".
 
-WAIT UNTIL VERTICALSPEED >= -1.
+WAIT UNTIL VERTICALSPEED >= 0.
 LOCK THROTTLE TO 1.
 STAGE.
-AG10 ON.
 
 PRINT "= Landing complete".
